@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Drive the Robot — Variables, Live</title>
@@ -60,7 +61,7 @@ footer{margin-top:16px;color:var(--muted);font-size:14px}footer a{color:var(--go
   <section class="card">
     <h2>Change the variables</h2>
     <p>Type new starting values, then press <b>Start</b>. This is exactly what the Java lines below do.</p>
-    <div class="row"><span><code>String</code></span><input type="text" id="vName" maxlength="20" value="Imperial Robotics" aria-label="teamName"></div>
+    <div class="row"><span><code>String</code></span><input type="text" id="vName" maxlength="20" value="My Team" aria-label="teamName"></div>
     <div class="row"><span><code>boolean</code></span><label><input type="checkbox" id="vHas" checked> hasGamePiece</label></div>
     <div class="row"><span><code>int</code></span><input type="number" id="vScore" value="0" step="1" aria-label="score"></div>
     <div class="row"><span><code>double</code></span><input type="number" id="vTime" value="150.0" step="0.1" aria-label="matchTime"></div>
@@ -162,7 +163,7 @@ const VIDEO_URL = '';
     const score = t >= HIT ? 1 : 0;
     const S = {
       pose, vel, mods, hasPiece: has, disks: [], floor: [], pops: [],
-      vars: { teamName: 'Imperial Robotics', hasGamePiece: has, score, matchTime: 135.0 - t },
+      vars: { teamName: 'My Team', hasGamePiece: has, score, matchTime: 135.0 - t },
       flash: {},
     };
     if (t >= SHOOT && t < SHOOT + 0.8) S.flash.hasGamePiece = t - SHOOT;
@@ -321,7 +322,7 @@ const R = RobotCore, cv = document.getElementById('cv'), ctx = cv.getContext('2d
 if (VIDEO_URL) $('vid').href = VIDEO_URL; else $('vidwrap').style.display = 'none';
 let mode = 'drive', t = 0, last = performance.now(), mods = R.makeModules(), D;
 const opts = { arrows: true, panel: true };
-let start = { name: 'Imperial Robotics', has: true, score: 0, time: 150 };
+let start = { name: 'My Team', has: true, score: 0, time: 150 };
 function resetDrive() {
   D = { pose: { x: 500, y: 560, th: 0 }, vel: { vx: 0, vy: 0, w: 0 }, has: start.has, score: start.score, time: start.time,
         disks: [], pops: [], floor: start.has ? [{ x: 1000, y: 300 }] : [{ x: 820, y: 330 }], flash: {} };
