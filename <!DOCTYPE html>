@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Drive the Robot — Variables, Live</title>
+<meta name="description" content="Drive a top-down FRC robot and watch its Java variables change live. From a simple beginner Java series.">
+<style>
+:root{--bg:#0f131a;--panel:#171c25;--line:#273042;--text:#e8edf5;--muted:#93a0b4;--accent:#ffb020;--gold:#ffd166}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1280px;margin:0 auto;padding:18px 18px 28px}
+h1{margin:0;font-size:22px}header p{margin:4px 0 0;color:var(--muted)}
+.stage{margin:14px 0 10px;border:1px solid var(--line);border-radius:12px;overflow:hidden;aspect-ratio:16/9;position:relative;
+  background:linear-gradient(rgba(255,255,255,.06) 2px,transparent 2px) 0 0/100% 11.11%,linear-gradient(90deg,rgba(255,255,255,.06) 2px,transparent 2px) 0 0/6.25% 100%,#4a5361}
+.stage.dark{background:#11151c}
+canvas{width:100%;height:100%;display:block;outline:none;touch-action:none}
+.bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+button,select,input{font:inherit;color:var(--text);background:#222a37;border:1px solid #334055;border-radius:8px;padding:6px 12px}
+button{cursor:pointer}button:hover{background:#2a3445}button.on{background:var(--accent);color:#1a1300;border-color:var(--accent);font-weight:600}
+label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.keys{color:var(--muted);font-size:14px}.keys kbd{background:#222a37;border:1px solid #334055;border-bottom-width:2px;border-radius:5px;padding:0 6px;font:12px ui-monospace,monospace;color:var(--text)}
+.grid{display:grid;grid-template-columns:1.1fr 1fr;gap:14px;margin-top:14px}@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card h2{margin:0 0 4px;font-size:17px}.card p{margin:0 0 10px;color:var(--muted)}
+.row{display:grid;grid-template-columns:110px 1fr;gap:8px 12px;align-items:center;margin:8px 0}
+.row input[type=text],.row input[type=number]{width:100%}
+code,.java{font-family:"DejaVu Sans Mono",ui-monospace,Menlo,Consolas,monospace}
+.java{background:#0b0e14;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;white-space:pre;overflow-x:auto;margin:10px 0}
+.t{color:#a9bbd6}.s{color:#9be38a}.n{color:#7cc7ff}.b{color:var(--gold)}
+.err{color:#ff8a8a;min-height:1.4em;font-size:14px}
+.touch{display:none;gap:8px;margin-top:10px;flex-wrap:wrap;user-select:none;-webkit-user-select:none}
+.touch button{min-width:58px;min-height:52px;font-size:20px}.touch .sp{flex-basis:100%;height:0}
+.grid>*{min-width:0}
+#mirror{display:none;margin-top:10px}
+#mirror .v{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;font-family:"DejaVu Sans Mono",ui-monospace,Menlo,monospace;font-size:15px}
+#mirror .ty{color:#a9bbd6;background:#2b3445;border-radius:6px;padding:1px 6px;font-size:13px}
+#mirror .val{text-align:right}#mirror .fl{background:rgba(255,209,102,.18);border-radius:6px}
+@media (max-width:860px){#mirror{display:block}}
+@media (pointer:coarse){.keys{display:none}}
+@media (pointer:coarse){.touch{display:flex}}
+footer{margin-top:16px;color:var(--muted);font-size:14px}footer a{color:var(--gold)}
+.legend{display:flex;flex-wrap:wrap;gap:12px}.legend i{display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
+</style></head><body><main>
+<header><h1>Drive the robot. Watch its variables.</h1>
+<p>Every robot keeps track of things in <b>variables</b>. Drive it around, shoot, pick up game pieces, and watch them change live.</p></header>
+
+<div class="stage" id="stage"><canvas id="cv" width="1920" height="1080" tabindex="0" aria-label="Top-down robot you can drive"></canvas></div>
+<div class="bar">
+  <button id="mDrive" class="on">Drive it</button><button id="mScript">Watch demo</button>
+  <span class="keys" id="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>Q</kbd>/<kbd>E</kbd> turn · <kbd>Space</kbd> shoot · drive the front over a game piece to pick it up · <kbd>R</kbd> reset</span>
+  <span style="flex:1"></span>
+  <label><input type="checkbox" id="arrows" checked>Arrows</label>
+  <select id="bg" aria-label="Background"><option value="">Field</option><option value="dark">Dark</option></select>
+</div>
+<div class="touch" id="touch">
+  <button data-k="a" aria-label="Left">◀</button><button data-k="w" aria-label="Up">▲</button><button data-k="s" aria-label="Down">▼</button><button data-k="d" aria-label="Right">▶</button>
+  <span class="sp"></span><button data-k="q" aria-label="Turn left">⟲</button><button data-k="e" aria-label="Turn right">⟳</button><button data-k=" " aria-label="Shoot">Shoot</button>
+</div>
+
+<div class="card" id="mirror" aria-live="off"><h2 style="margin-bottom:8px">Robot variables <span style="color:#ff4d4d">●</span> <span style="color:var(--muted);font-size:13px">LIVE</span></h2><div class="v" id="mv"></div></div>
+
+<div class="grid">
+  <section class="card">
+    <h2>Change the variables</h2>
+    <p>Type new starting values, then press <b>Start</b>. This is exactly what the Java lines below do.</p>
+    <div class="row"><span><code>String</code></span><input type="text" id="vName" maxlength="20" value="Imperial Robotics" aria-label="teamName"></div>
+    <div class="row"><span><code>boolean</code></span><label><input type="checkbox" id="vHas" checked> hasGamePiece</label></div>
+    <div class="row"><span><code>int</code></span><input type="number" id="vScore" value="0" step="1" aria-label="score"></div>
+    <div class="row"><span><code>double</code></span><input type="number" id="vTime" value="150.0" step="0.1" aria-label="matchTime"></div>
+    <div class="java" id="java"></div>
+    <div class="err" id="err" role="status"></div>
+    <button id="start" class="on">Start</button>
+  </section>
+  <section class="card">
+    <h2>What you're looking at</h2>
+    <div class="legend"><span><i style="background:#39d98a"></i>each wheel's direction + speed</span><span><i style="background:#ffb020"></i>where the robot is going</span><span><i style="background:#ff5fa2"></i>how it's turning</span></div>
+    <p style="margin-top:10px">This is a robot seen from above, like in tools FRC teams use (AdvantageScope, PathPlanner). The circles are swerve wheels.</p>
+    <p><code>teamName</code> is a <b>String</b>: a name or phrase. It never changes during the match.<br>
+    <code>hasGamePiece</code> is a <b>boolean</b>: yes or no. Shoot and it becomes <code>false</code>.<br>
+    <code>score</code> is an <b>int</b>: a whole number. It goes up by one each shot.<br>
+    <code>matchTime</code> is a <b>double</b>: a number with a decimal point. It counts down.</p>
+  </section>
+</div>
+<footer>Made by GMRxLab for a beginner Java series.<span id="vidwrap"> <a id="vid" href="#" target="_blank" rel="noopener">Watch the episode</a>.</span></footer>
+</main>
+<script>
+/* ===== Paste your video link between the quotes to show the "Watch the episode" link ===== */
+const VIDEO_URL = '';
+// Top-down FRC robot: swerve modules, direction + turn arrows, shooter ramp,
+// and a live "robot variables" panel. Shared by the HTML page and the video renderer.
+(function (root) {
+  const W = 1920, H = 1080, LOOP = 10;
+  const MONO = "'DejaVu Sans Mono', ui-monospace, Menlo, monospace";
+  const SANS = "Inter, system-ui, -apple-system, sans-serif";
+
+  // ---------- look (change freely) ----------
+  const STYLE = {
+    bumper: '#1f5fd6', bumperText: '#ffffff', teamNumber: '0000',
+    frame: '#2a2f3a', module: '#3a4150', moduleEdge: '#8892a6',
+    wheel: '#15181e', tread: '#4b5263', ramp: '#5b6577', lip: '#c9ced8',
+    piece: '#ff8a1f', pieceDark: '#c45f05',
+    modArrow: '#39d98a', moveArrow: '#ffb020', turnArrow: '#ff5fa2',
+  };
+  const MODS = [[78, -78], [78, 78], [-78, 78], [-78, -78]]; // robot frame, +x = front
+
+  // ---------- the scripted 10 s loop ----------
+  // [time, x, y, heading in degrees]
+  const KEYS = [
+    [0.0, 430, 600, -10],
+    [0.6, 430, 600, -10],
+    [3.2, 1080, 470, -35],   // drive + turn toward the target
+    [5.0, 1080, 470, -35],   // stop, shoot
+    [7.8, 700, 860, -180],   // drive back to the piece on the floor
+    [8.6, 700, 860, -180],
+    [10.0, 430, 600, -370],  // spin back while driving (swerve!)
+  ];
+  const SHOOT = 3.8, HIT = 4.7, PICK = 7.6;
+  const FLOOR = { x: 550, y: 860 };
+
+  const ease = u => u * u * (3 - 2 * u);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  function poseAt(t) {
+    t = ((t % LOOP) + LOOP) % LOOP;
+    for (let i = 0; i < KEYS.length - 1; i++) {
+      const [t0, x0, y0, a0] = KEYS[i], [t1, x1, y1, a1] = KEYS[i + 1];
+      if (t <= t1) {
+        const u = ease(clamp((t - t0) / (t1 - t0), 0, 1));
+        return { x: x0 + (x1 - x0) * u, y: y0 + (y1 - y0) * u, th: (a0 + (a1 - a0) * u) * Math.PI / 180 };
+      }
+    }
+    const k = KEYS[KEYS.length - 1];
+    return { x: k[1], y: k[2], th: k[3] * Math.PI / 180 };
+  }
+  function velAt(t) {
+    t = ((t % LOOP) + LOOP) % LOOP;
+    const d = 1 / 240, t0 = Math.max(0, t - d), t1 = Math.min(LOOP - 1e-6, t + d);
+    const a = poseAt(t0), b = poseAt(t1), k = t1 - t0;
+    return { vx: (b.x - a.x) / k, vy: (b.y - a.y) / k, w: (b.th - a.th) / k };
+  }
+
+  // Swerve module state (angle is kept when the wheel stops, like a real robot)
+  function makeModules() { return MODS.map(() => ({ angle: 0, speed: 0, roll: 0 })); }
+  function stepModules(mods, pose, vel, dt) {
+    const c = Math.cos(-pose.th), s = Math.sin(-pose.th);
+    const rx = vel.vx * c - vel.vy * s, ry = vel.vx * s + vel.vy * c; // robot-frame velocity
+    MODS.forEach(([mx, my], i) => {
+      const vx = rx - vel.w * my, vy = ry + vel.w * mx;
+      const sp = Math.hypot(vx, vy);
+      if (sp > 6) mods[i].angle = Math.atan2(vy, vx);
+      mods[i].speed = sp;
+      mods[i].roll += sp * dt;
+    });
+  }
+
+  function rampPoint(pose) { // where the piece sits on the robot, in world coords
+    return { x: pose.x + Math.cos(pose.th) * 10, y: pose.y + Math.sin(pose.th) * 10 };
+  }
+
+  function timelineState(t, mods, dt) {
+    t = ((t % LOOP) + LOOP) % LOOP;
+    const pose = poseAt(t), vel = velAt(t);
+    if (mods) stepModules(mods, pose, vel, dt || 0);
+    const has = t < SHOOT || t >= PICK;
+    const score = t >= HIT ? 1 : 0;
+    const S = {
+      pose, vel, mods, hasPiece: has, disks: [], floor: [], pops: [],
+      vars: { teamName: 'Imperial Robotics', hasGamePiece: has, score, matchTime: 135.0 - t },
+      flash: {},
+    };
+    if (t >= SHOOT && t < SHOOT + 0.8) S.flash.hasGamePiece = t - SHOOT;
+    if (t >= PICK && t < PICK + 0.8) S.flash.hasGamePiece = t - PICK;
+    if (t >= HIT && t < HIT + 0.8) S.flash.score = t - HIT;
+    if (t >= SHOOT && t < HIT) {
+      const shot = poseAt(SHOOT), p0 = rampPoint(shot), u = (t - SHOOT) / (HIT - SHOOT);
+      S.disks.push({ x: p0.x + Math.cos(shot.th) * 650 * u, y: p0.y + Math.sin(shot.th) * 650 * u,
+        s: 1 + 0.45 * Math.sin(Math.PI * u), a: u < 0.8 ? 1 : 1 - (u - 0.8) / 0.2 });
+    }
+    if (t >= HIT && t < HIT + 0.9) {
+      const shot = poseAt(SHOOT), p0 = rampPoint(shot), u = (t - HIT) / 0.9;
+      S.pops.push({ x: p0.x + Math.cos(shot.th) * 650, y: p0.y + Math.sin(shot.th) * 650 - 40 - 50 * u, a: 1 - u, text: '+1' });
+    }
+    if (t < PICK - 0.3) S.floor.push({ x: FLOOR.x, y: FLOOR.y, a: 1 });
+    else if (t < PICK) { // slides into the intake
+      const u = (t - (PICK - 0.3)) / 0.3, f = { x: pose.x + Math.cos(pose.th) * 120, y: pose.y + Math.sin(pose.th) * 120 };
+      S.floor.push({ x: FLOOR.x + (f.x - FLOOR.x) * u, y: FLOOR.y + (f.y - FLOOR.y) * u, a: 1 - u });
+    }
+    if (t >= 9.6) S.floor.push({ x: FLOOR.x, y: FLOOR.y, a: (t - 9.6) / 0.4 });
+    return S;
+  }
+
+  // ---------- drawing ----------
+  function rr(ctx, x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function piece(ctx, x, y, r, a) {
+    ctx.save(); ctx.globalAlpha *= a;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.arc(x, y, r * 0.45, 0, Math.PI * 2, true);
+    ctx.fillStyle = STYLE.piece; ctx.fill('evenodd');
+    ctx.lineWidth = 3; ctx.strokeStyle = STYLE.pieceDark;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, r * 0.45, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+  function arrowLine(ctx, x0, y0, x1, y1, color) {
+    const L = Math.hypot(x1 - x0, y1 - y0); if (L < 8) return;
+    const a = Math.atan2(y1 - y0, x1 - x0), hx = x1 - Math.cos(a) * 14, hy = y1 - Math.sin(a) * 14;
+    for (const [col, lw] of [['rgba(0,0,0,0.55)', 12], [color, 7]]) {
+      ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(hx, hy); ctx.stroke();
+    }
+    head(ctx, x1, y1, a, color);
+  }
+  function head(ctx, x, y, a, color) {
+    const p = [[x + Math.cos(a) * 6, y + Math.sin(a) * 6],
+      [x - Math.cos(a) * 20 + Math.cos(a + Math.PI / 2) * 14, y - Math.sin(a) * 20 + Math.sin(a + Math.PI / 2) * 14],
+      [x - Math.cos(a) * 20 - Math.cos(a + Math.PI / 2) * 14, y - Math.sin(a) * 20 - Math.sin(a + Math.PI / 2) * 14]];
+    ctx.beginPath(); ctx.moveTo(...p[0]); ctx.lineTo(...p[1]); ctx.lineTo(...p[2]); ctx.closePath();
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.fillStyle = color; ctx.fill();
+  }
+
+  function drawRobot(ctx, S, opts) {
+    const { pose, mods } = S;
+    S.floor.forEach(f => piece(ctx, f.x, f.y, 30, f.a));
+    ctx.save(); ctx.translate(pose.x, pose.y); ctx.rotate(pose.th);
+    // bumpers + frame
+    rr(ctx, -132, -132, 264, 264, 20); ctx.fillStyle = STYLE.bumper; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.stroke();
+    rr(ctx, -110, -110, 220, 220, 8); ctx.fillStyle = STYLE.frame; ctx.fill();
+    ctx.fillStyle = STYLE.bumperText; ctx.font = `800 19px ${SANS}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(STYLE.teamNumber, 0, -121); ctx.fillText(STYLE.teamNumber, 0, 121);
+    // swerve modules
+    MODS.forEach(([mx, my], i) => {
+      const m = mods[i];
+      ctx.beginPath(); ctx.arc(mx, my, 34, 0, Math.PI * 2); ctx.fillStyle = STYLE.module; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = STYLE.moduleEdge; ctx.stroke();
+      ctx.save(); ctx.translate(mx, my); ctx.rotate(m.angle);
+      rr(ctx, -23, -9, 46, 18, 4); ctx.fillStyle = STYLE.wheel; ctx.fill();
+      ctx.save(); ctx.clip(); ctx.strokeStyle = STYLE.tread; ctx.lineWidth = 3;
+      const off = -((m.roll * 0.5) % 8);
+      for (let x = -32 + off; x < 32; x += 8) { ctx.beginPath(); ctx.moveTo(x, -10); ctx.lineTo(x, 10); ctx.stroke(); }
+      ctx.restore(); ctx.restore();
+    });
+    // shooter ramp
+    ctx.beginPath(); ctx.moveTo(-62, -44); ctx.lineTo(70, -34); ctx.lineTo(70, 34); ctx.lineTo(-62, 44); ctx.closePath();
+    ctx.fillStyle = STYLE.ramp; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 3;
+    for (const x of [-40, -18]) { ctx.beginPath(); ctx.moveTo(x, -26); ctx.lineTo(x + 14, 0); ctx.lineTo(x, 26); ctx.stroke(); }
+    rr(ctx, 68, -36, 12, 72, 3); ctx.fillStyle = STYLE.lip; ctx.fill();
+    // front marker
+    ctx.beginPath(); ctx.moveTo(104, 0); ctx.lineTo(90, -9); ctx.lineTo(90, 9); ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill();
+    if (S.hasPiece) piece(ctx, 10, 0, 30, 1);
+    // module arrows (direction + speed of each wheel)
+    if (opts.arrows) MODS.forEach(([mx, my], i) => {
+      const m = mods[i], L = Math.min(m.speed * 0.28, 95);
+      if (L > 10) arrowLine(ctx, mx, my, mx + Math.cos(m.angle) * (34 + L), my + Math.sin(m.angle) * (34 + L), STYLE.modArrow);
+    });
+    ctx.restore();
+    // whole-robot arrows: where it's going, and how it's turning
+    if (opts.arrows) {
+      const { vx, vy, w } = S.vel, sp = Math.hypot(vx, vy), L = Math.min(sp * 0.32, 170);
+      if (L > 14) arrowLine(ctx, pose.x, pose.y, pose.x + vx / sp * L, pose.y + vy / sp * L, STYLE.moveArrow);
+      const sweep = clamp(w * 0.45, -2.0, 2.0);
+      if (Math.abs(sweep) > 0.12) {
+        const R = 178, a0 = pose.th - sweep / 2, a1 = pose.th + sweep / 2;
+        for (const [col, lw] of [['rgba(0,0,0,0.55)', 12], [STYLE.turnArrow, 7]]) {
+          ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.arc(pose.x, pose.y, R, a0, a1 - Math.sign(sweep) * 0.08, sweep < 0); ctx.stroke();
+        }
+        head(ctx, pose.x + Math.cos(a1) * R, pose.y + Math.sin(a1) * R, a1 + Math.sign(sweep) * Math.PI / 2, STYLE.turnArrow);
+      }
+    }
+    S.disks.forEach(d => piece(ctx, d.x, d.y, 30 * d.s, d.a));
+    S.pops.forEach(p => {
+      ctx.save(); ctx.globalAlpha = p.a; ctx.font = `800 64px ${SANS}`; ctx.textAlign = 'center';
+      ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.strokeText(p.text, p.x, p.y);
+      ctx.fillStyle = '#ffd166'; ctx.fillText(p.text, p.x, p.y); ctx.restore();
+    });
+  }
+
+  function fmtVal(k, v) {
+    if (k === 'teamName') return { s: `"${v}"`, c: '#9be38a' };
+    if (k === 'hasGamePiece') return { s: String(v), c: v ? '#ffd166' : '#ff7b7b' };
+    if (k === 'matchTime') return { s: Math.max(0, v).toFixed(1), c: '#7cc7ff' };
+    return { s: String(v), c: '#7cc7ff' };
+  }
+  const ROWS = [['String', 'teamName'], ['boolean', 'hasGamePiece'], ['int', 'score'], ['double', 'matchTime']];
+
+  function drawPanel(ctx, S, x, y) {
+    const w = 760, rowH = 74, h = 96 + ROWS.length * rowH + 14;
+    if (x === undefined) { x = W - w - 60; y = H - h - 60; }
+    ctx.save();
+    rr(ctx, x, y, w, h, 20); ctx.fillStyle = 'rgba(16,20,28,0.93)'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.stroke();
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.fillStyle = '#e8edf5'; ctx.font = `700 32px ${SANS}`; ctx.fillText('Robot variables', x + 30, y + 50);
+    ctx.beginPath(); ctx.arc(x + w - 92, y + 50, 8, 0, Math.PI * 2); ctx.fillStyle = '#ff4d4d'; ctx.fill();
+    ctx.fillStyle = '#9aa6b8'; ctx.font = `600 22px ${SANS}`; ctx.fillText('LIVE', x + w - 76, y + 51);
+    ROWS.forEach(([type, k], i) => {
+      const ry = y + 96 + i * rowH, f = S.flash[k];
+      if (f !== undefined) { rr(ctx, x + 12, ry + 4, w - 24, rowH - 8, 12); ctx.fillStyle = `rgba(255,209,102,${0.35 * (1 - f / 0.8)})`; ctx.fill(); }
+      ctx.font = `600 22px ${MONO}`; const tw = ctx.measureText(type).width;
+      rr(ctx, x + 28, ry + 20, tw + 24, 36, 8); ctx.fillStyle = '#2b3445'; ctx.fill();
+      ctx.fillStyle = '#a9bbd6'; ctx.fillText(type, x + 40, ry + 39);
+      ctx.font = `600 28px ${MONO}`; ctx.fillStyle = '#ffffff'; ctx.fillText(k, x + 190, ry + 39);
+      const v = fmtVal(k, S.vars[k]); ctx.fillStyle = v.c; ctx.textAlign = 'right'; ctx.fillText(v.s, x + w - 30, ry + 39); ctx.textAlign = 'left';
+    });
+    ctx.restore();
+  }
+
+  function draw(ctx, S, opts) {
+    opts = Object.assign({ robot: true, panel: true, arrows: true }, opts || {});
+    if (opts.robot) drawRobot(ctx, S, opts);
+    if (opts.panel) drawPanel(ctx, S);
+  }
+
+  const api = { W, H, LOOP, STYLE, MODS, poseAt, velAt, makeModules, stepModules, rampPoint, timelineState, draw, drawRobot, drawPanel, piece };
+  if (typeof module !== 'undefined') module.exports = api; else root.RobotCore = api;
+})(this);
+
+const R = RobotCore, cv = document.getElementById('cv'), ctx = cv.getContext('2d'), $ = id => document.getElementById(id);
+if (VIDEO_URL) $('vid').href = VIDEO_URL; else $('vidwrap').style.display = 'none';
+let mode = 'drive', t = 0, last = performance.now(), mods = R.makeModules(), D;
+const opts = { arrows: true, panel: true };
+let start = { name: 'Imperial Robotics', has: true, score: 0, time: 150 };
+function resetDrive() {
+  D = { pose: { x: 500, y: 560, th: 0 }, vel: { vx: 0, vy: 0, w: 0 }, has: start.has, score: start.score, time: start.time,
+        disks: [], pops: [], floor: start.has ? [{ x: 1000, y: 300 }] : [{ x: 820, y: 330 }], flash: {} };
+  mods = R.makeModules();
+}
+resetDrive();
+// ---- input: keyboard (ignored while typing in a box) + touch buttons ----
+const keys = new Set(), typing = () => ['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName);
+function press(k) {
+  keys.add(k);
+  if (k === ' ' && mode === 'drive' && D.has) { D.has = false; D.flash.hasGamePiece = 0;
+    const p = R.rampPoint(D.pose); D.disks.push({ x0: p.x, y0: p.y, th: D.pose.th, u: 0 }); }
+  if (k === 'r') resetDrive();
+}
+addEventListener('keydown', e => { if (typing()) return; const k = e.key.toLowerCase();
+  if ('wasdqer '.includes(k)) { e.preventDefault(); if (!keys.has(k)) press(k); } });
+addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+addEventListener('blur', () => keys.clear());
+document.querySelectorAll('#touch button').forEach(b => {
+  const k = b.dataset.k;
+  b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); press(k); });
+  ['pointerup','pointercancel','lostpointercapture'].forEach(ev => b.addEventListener(ev, () => keys.delete(k)));
+});
+function stepDrive(dt) {
+  const tx = (keys.has('d') - keys.has('a')) * 430, ty = (keys.has('s') - keys.has('w')) * 430, tw = (keys.has('e') - keys.has('q')) * 3.2;
+  const k = Math.min(1, dt * 8), v = D.vel, p = D.pose;
+  v.vx += (tx - v.vx) * k; v.vy += (ty - v.vy) * k; v.w += (tw - v.w) * k;
+  p.x = Math.max(140, Math.min(R.W - 140, p.x + v.vx * dt)); p.y = Math.max(140, Math.min(R.H - 140, p.y + v.vy * dt)); p.th += v.w * dt;
+  R.stepModules(mods, p, v, dt);
+  D.time = Math.max(0, D.time - dt);
+  for (const f in D.flash) { D.flash[f] += dt; if (D.flash[f] > 0.8) delete D.flash[f]; }
+  D.disks.forEach(d => { d.u += dt / 0.9; if (d.u >= 1 && !d.done) { d.done = true; D.score++; D.flash.score = 0;
+    D.pops.push({ x: d.x0 + Math.cos(d.th) * 650, y: d.y0 + Math.sin(d.th) * 650 - 40, a: 1 }); } });
+  D.disks = D.disks.filter(d => d.u < 1); D.pops.forEach(q => { q.a -= dt / 0.9; q.y -= 55 * dt; }); D.pops = D.pops.filter(q => q.a > 0);
+  const front = { x: p.x + Math.cos(p.th) * 130, y: p.y + Math.sin(p.th) * 130 };
+  D.floor = D.floor.filter(f => { if (!D.has && Math.hypot(f.x - front.x, f.y - front.y) < 55) { D.has = true; D.flash.hasGamePiece = 0; return false; } return true; });
+  if (!D.floor.length && D.has) { let f; do { f = { x: 200 + Math.random() * (R.W - 400), y: 200 + Math.random() * (R.H - 400) }; } while (Math.hypot(f.x - p.x, f.y - p.y) < 300 || (f.x > 1060 && f.y > 570)); D.floor.push(f); }
+}
+function driveState() {
+  return { pose: D.pose, vel: D.vel, mods, hasPiece: D.has,
+    disks: D.disks.map(d => ({ x: d.x0 + Math.cos(d.th) * 650 * d.u, y: d.y0 + Math.sin(d.th) * 650 * d.u, s: 1 + 0.45 * Math.sin(Math.PI * d.u), a: d.u < 0.8 ? 1 : 1 - (d.u - 0.8) / 0.2 })),
+    floor: D.floor.map(f => ({ x: f.x, y: f.y, a: 1 })), pops: D.pops.map(q => ({ x: q.x, y: q.y, a: Math.max(0, q.a), text: '+1' })),
+    vars: { teamName: start.name, hasGamePiece: D.has, score: D.score, matchTime: D.time }, flash: D.flash };
+}
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; let S;
+  if (mode === 'script') { t = (t + dt) % R.LOOP; S = R.timelineState(t, mods, dt); }
+  else { stepDrive(dt); S = driveState(); }
+  opts.panel = !narrow.matches;
+  ctx.clearRect(0, 0, R.W, R.H); R.draw(ctx, S, opts);
+  if (narrow.matches) mirror(S);
+  requestAnimationFrame(frame);
+}
+// ---- on small screens the variables show under the robot instead of inside it ----
+const narrow = matchMedia('(max-width:860px)');
+const ROWS = [['String','teamName'],['boolean','hasGamePiece'],['int','score'],['double','matchTime']];
+$('mv').innerHTML = ROWS.map(([ty,k]) => `<span class="ty">${ty}</span><span>${k}</span><span class="val" id="m_${k}"></span>`).join('');
+function mirror(S) {
+  for (const [, k] of ROWS) {
+    const v = S.vars[k], el = $('m_' + k);
+    el.textContent = k === 'teamName' ? `"${v}"` : k === 'matchTime' ? Math.max(0, v).toFixed(1) : String(v);
+    el.style.color = k === 'teamName' ? '#9be38a' : k === 'hasGamePiece' ? (v ? '#ffd166' : '#ff7b7b') : '#7cc7ff';
+    el.parentNode && el.classList.toggle('fl', S.flash[k] !== undefined);
+  }
+}
+// ---- the "change the variables" box: live Java preview + friendly type checks ----
+const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+function check() {
+  const name = $('vName').value, sc = $('vScore').value.trim(), tm = $('vTime').value.trim(), has = $('vHas').checked;
+  let err = '';
+  if (name.includes('"')) err = 'A String goes inside quotes, so it can’t contain a plain " itself.';
+  else if (sc === '' || !/^-?\d+$/.test(sc)) err = 'score is an int: whole numbers only (like 3, not 2.5).';
+  else if (tm === '' || isNaN(+tm)) err = 'matchTime is a double: it needs a number (decimals are fine).';
+  else if (+tm < 0 || +tm > 999) err = 'Pick a matchTime between 0 and 999.';
+  const tmShow = tm === '' || isNaN(+tm) ? tm : (String(tm).includes('.') ? tm : tm + '.0');
+  $('java').innerHTML =
+    `<span class="t">String</span>  teamName     = <span class="s">"${esc(name)}"</span>;\n` +
+    `<span class="t">boolean</span> hasGamePiece = <span class="b">${has}</span>;\n` +
+    `<span class="t">int</span>     score        = <span class="n">${esc(sc)}</span>;\n` +
+    `<span class="t">double</span>  matchTime    = <span class="n">${esc(tmShow)}</span>;`;
+  $('err').textContent = err; $('start').disabled = !!err; $('start').style.opacity = err ? .5 : 1;
+  return !err;
+}
+['vName','vScore','vTime','vHas'].forEach(id => $(id).addEventListener('input', check));
+$('start').onclick = () => { if (!check()) return;
+  start = { name: $('vName').value, has: $('vHas').checked, score: parseInt($('vScore').value, 10), time: +$('vTime').value };
+  setMode('drive'); resetDrive(); cv.focus(); };
+check();
+function setMode(m) { mode = m; mods = R.makeModules(); t = 0;
+  $('mDrive').className = m === 'drive' ? 'on' : ''; $('mScript').className = m === 'script' ? 'on' : '';
+  $('keys').style.visibility = m === 'drive' ? 'visible' : 'hidden'; if (m === 'drive') resetDrive(); }
+$('mDrive').onclick = () => { setMode('drive'); cv.focus(); };
+$('mScript').onclick = () => setMode('script');
+$('arrows').onchange = e => opts.arrows = e.target.checked;
+$('bg').onchange = e => $('stage').className = 'stage ' + e.target.value;
+requestAnimationFrame(frame);
+</script></body></html>
